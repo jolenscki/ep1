@@ -1,7 +1,7 @@
 ################################
-######## NUMÃ‰RICO - EP1 ########
+######## NUMERICO - EP1 ########
 ################################
-# JoÃ£o Rodrigo Windisch Olenscki
+# Joao Rodrigo Windisch Olenscki
 # NUSP 10773224
 # Luca Rodrigues Miguel
 # NUSP 10705655
@@ -16,7 +16,7 @@ import datetime
 import math
 import pandas as pd # importando pandas para melhor visualizar as matrizes
 
-# Parâmetros estÃ©ticos do matplotlib
+# Parametros estaticos do matplotlib
 plt.rcParams['mathtext.fontset'] = 'cm'
 plt.rcParams['font.family'] = 'STIXGeneral'
 params = {'legend.fontsize': 'x-large',
@@ -27,7 +27,7 @@ params = {'legend.fontsize': 'x-large',
          'ytick.labelsize':'x-large'}
 plt.rcParams.update(params)
 
-# FunÃ§Ãµes de miscelânia, úteis para alguns fins
+# Funcoes de miscelânia, uteis para alguns fins
 def create_folder(folder_list, path = os.getcwd()):
     for folder_name in folder_list:
         try:
@@ -157,6 +157,8 @@ def run_test_vectorized(T, lambda_val, N):
     g2 = numpy.zeros((time_array.shape))
 
     u = apply_boundary_conditions(zeros, u0, g1, g2)
+
+    zeros = 0
 
     u = apply_equation_11(T, lambda_val, u, space_array)
     exact_matrix = get_e_matrix(time_array, space_array)
