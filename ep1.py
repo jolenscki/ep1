@@ -190,9 +190,6 @@ def main():
             plot_temperatures(T, lambda_val, N, delta_time, space_array, error_matrix, 'Erro', n_dir, 'error_time_series')
             plot_heatmap(T, lambda_val, N, delta_time, space_array, time_array, error_matrix, 'Erro', n_dir, 'error_heatmap')
 
-            numpy.savetxt(os.path.join(n_dir, 'temperature_matrix.csv'),temperature_matrix, delimiter=',')
-            numpy.savetxt(os.path.join(n_dir, 'exact_matrix.csv'), exact_matrix, delimiter=',')
-            numpy.savetxt(os.path.join(n_dir, 'error_matrix.csv'), error_matrix, delimiter=',')
             
 main()
 
