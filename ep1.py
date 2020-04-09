@@ -29,6 +29,15 @@ plt.rcParams.update(params)
 
 # Funcoes de miscelânia, uteis para alguns fins
 def create_folder(folder_list, path = os.getcwd()):
+    '''
+    funcao que cria pastas em um certo diretório
+    @parameters:
+    - folder_list: lista, cada elemento e uma string contendo o nome da pasta a ser criada
+    - path: string, caminho absoluto anterior as pastas a serem criadas
+    -- default_value: os.getcwd(), caminho até a pasta onde o programa está rodando
+    @output:
+    - None
+    '''
     for folder_name in folder_list:
         try:
             os.mkdir(os.path.join(path, str(folder_name)))
@@ -40,28 +49,85 @@ def create_folder(folder_list, path = os.getcwd()):
             
 # Definindo funções iniciais
 def get_M_parameter(T, lambda_val, N):
+    '''
+    funcao para calcular o parametro M
+    @parameters:
+    - T: float, constante de tempo T
+    - lambda_val: float, constante do problema
+    - N: inteiro, numero de divisoes feitas na barra
+    @output:
+    - M: inteiro, numero de divisoes no tempo
+    '''
     M =T*(N**2)/lambda_val
     return int(M)
 
 def create_m_n_matrix(M, N):
+    '''
+    funcao para criar uma matriz nula para ser preenchida futuramente
+    @parameters:
+    - M: inteiro, numero de divisoes no tempo
+    - N: inteiro, numero de divisoes na barra
+    @output:
+    - u: array ((M+1)x(N+1)), array de zeros, de dimensao (M+1)x(N+1) 
+    '''
     u = numpy.zeros((M+1, N+1))
     return u
 
 def get_time_array(M, T):
+    '''
+    funcao para criar uma array do tempo, sera usada de forma auxiliar para aplicacao de outras funcoes
+    @parameters:
+    - M: inteiro, numero de divisoes no tempo
+    - T: float, constante de tempo T
+    @return:
+    - time_array: array (1x(M+1)), contem todos os instantes de tempo
+    -- example: [0*(T/M), 1*(T/M), ... , (M-1)*(T/M), M*(T/M)]
+    '''
     time_array = numpy.linspace(0, T, num = M+1)
     return time_array
 
 def get_space_array(N):
+    '''
+    funcao para criar uma array do espaco, sera usada de forma auxiliar para aplicacao de outras funcoes
+    @parameters:
+    - N: inteiro, numero de divisoes na barra
+    @return:
+    - space_array: array (1x(N+1)), contem todas as posicoes da barra
+    -- example: [0*(1/N), 1*(1/N), ... , (N-1)*(1/N), N*(1/N)]
+    '''
     space_array = numpy.linspace(0, 1, num = N+1)
     return space_array
 
 def apply_boundary_conditions(u, u0, g1, g2):
+    '''
+    funcao que aplica condicoes de contorno na matriz de temperaturas
+    @parameters:
+    - u: array ((M+1)x(N+1)), matriz de temperaturas (suposta nula no início)
+    - u0: array (1x(N+1)), temperaturas na barra em t=0
+    - g1 = array(1x(M+1)), temperaturas na barra para x=0
+    - g2 = array(1x(M+1)), temperaturas na barra para x=1
+    @return:
+    -u: array ((M+1)x(N+1)), matriz de temperaturas com 3 bordas ajustadas pelas condicoes iniciais
+    '''
     u[0] = u0
     u[:,0] = g1
     u[:,-1] = g2
     return u
 
 def plot_temperatures(T, lambda_val, N, delta_time, space_array, temperature_matrix, title, path, filename):
+    '''
+    funcao que plota um gráfico de temperaturas para cada 0.1 segundos (1/10 do tempo total)
+    @parameters:
+    - T: float, constante de tempo T
+    - lambda_val: float, constante do problema
+    - N: inteiro, numero de divisoes na barra
+    - delta_time: float, 
+    - space_array:
+    - temperature_matrix:
+    - title:
+    - path:
+    - filename:
+    '''
     L = temperature_matrix.shape[0]
     for time_step in range(11):
         temperature_array = temperature_matrix[(L//10)*time_step]
