@@ -116,17 +116,19 @@ def apply_boundary_conditions(u, u0, g1, g2):
 
 def plot_temperatures(T, lambda_val, N, delta_time, space_array, temperature_matrix, title, path, filename):
     '''
-    funcao que plota um gráfico de temperaturas para cada 0.1 segundos (1/10 do tempo total)
+    funcao que plota um grafico de temperaturas para cada 0.1 segundos (1/10 do tempo total)
     @parameters:
     - T: float, constante de tempo T
     - lambda_val: float, constante do problema
     - N: inteiro, numero de divisoes na barra
-    - delta_time: float, 
-    - space_array:
-    - temperature_matrix:
-    - title:
-    - path:
-    - filename:
+    - delta_time: float, tempo total decorrido para a execucao do programa, em segundos
+    - space_array: array (1x(N+1)), contem todas as posicoes da barra
+    - temperature_matrix: array ((M+1)x(N+1)), matriz de temperaturas
+    - title: string, titulo a ser colocado no grafico
+    - path: string, caminho ate o local onde o arquivo sera salvo
+    - filename: string, nome com o qual o arquivo sera salvo
+    @output:
+    - ax: axis (objeto de eixo do mpl)
     '''
     L = temperature_matrix.shape[0]
     for time_step in range(11):
