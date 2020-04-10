@@ -401,8 +401,8 @@ def main():
     -
     '''
     T = 1
-    lambda_list = [0.25, 0.5]
-    N_list = [10]#, 20, 40, 80, 160, 320, 640]
+    lambda_list = [0.5, 0.25]
+    N_list = [10, 20, 40, 80, 160, 320, 640]
     main_dir = os.getcwd()
     create_folder(lambda_list, path = main_dir)
     for lambda_val in lambda_list:
@@ -428,7 +428,7 @@ def main():
             error_array = get_error(last_line_a, last_line_e)
             delta_time_total = delta_time_a + delta_time_e
             plot_error_array(T, lambda_val, N, delta_time_total, space_array, error_array, n_dir, 'error_series')
-            
+
 main()
 
 
