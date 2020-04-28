@@ -264,10 +264,12 @@ def get_e_matrix(space_array, k, T, M):
     '''
     funcao que gera uma matriz de temperaturas a partir da equacao exata de difusao
     @parameters:
-    - time_array: array (1x(M+1)), contem todos os instantes de tempo
     - space_array: array (1x(N+1)), contem todas as posicoes da barra
+    - k: inteiro, indice da linha (ou seja, o instante de tempo) em que estamos calculado f
+    - T: float, constante de tempo T
+    - M: inteiro, numero de divisoes no tempo
     @output:
-    - e_array: array ((M+1)x(N+1)), contem os valores de temperatura calculados 
+    - e_array: array (1x(N+1)), contem os valores de temperatura calculados 
                 em todos os instantes de tempo para todas as posicoes da barra
     '''
     e_array = numpy.apply_along_axis(e, 0, space_array, k, T, M)
@@ -290,7 +292,7 @@ def apply_exact_solution(T, lambda_val, exact_matrix, space_array):
         exact_matrix[k] = get_e_matrix(space_array, k, T, M)
     return exact_matrix
     
-def f(space_array, k, T, M):
+def _1a_f(space_array, k, T, M):
     '''
     funcao f associada a eq 11
     @parameters:
@@ -299,28 +301,18 @@ def f(space_array, k, T, M):
     - T: float, constante de tempo T
     - M: inteiro, numero de divisoes no tempo
     @output:
-    - f: array (1x(N+1)), contem os valores de f calculados para um instante especifico 
-         t = (k*T/M) para todas as posicoes da barra
-    '''
-    # f = 10*(space_array**2)*(space_array - 1) - 60*space_array*((k*T)/M) + 20*((k*T)/M) # deprecated since EP1_v0.8
-    f = (10*(numpy.cos(10*(k*T/M)))*(space_array**2)*((1-space_array)**2) -
-         (1 + numpy.sin(10*(k*T/M)))*(12*(space_array**2) - 12*(space_array)) + 2)
-    return f
-
-def get_f_matrix(space_array, k, T, M):
-    '''
-    funcao que aplica o resultado da funcao anterior na space_array de fato
-    @parameters:
-    - space_array: array (1x(N+1)), contem todas as posicoes da barra
-    - k: inteiro, indice da linha (ou seja, o instante de tempo) em que estamos calculado f
-    - T: float, constante de tempo T
-    - M: inteiro, numero de divisoes no tempo
-    @output:
-    - f_array: matrix ((M+1)x(N+1)), contem os valores de f calculados para um instante especifico k 
+    - f_matrix: matrix (1x(N+1)), contem os valores de f calculados para um instante especifico k 
                 para as posicoes da barra exceto as extremas, estas sao substituidas por zeros
     '''
+    # f = 10*(space_array**2)*(space_array - 1) - 60*space_array*((k*T)/M) + 20*((k*T)/M) # deprecated since EP1_v0.8
+    def f(space_array, k, T, M):
+        return (10*(numpy.cos(10*(k*T/M)))*(space_array**2)*((1-space_array)**2) -
+                 (1 + numpy.sin(10*(k*T/M)))*(12*(space_array**2) - 12*(space_array)) + 2)
+    
     f_array = numpy.apply_along_axis(f, 0, space_array[1:-1], k, T, M)
-    return numpy.matrix(add_initial_ending_zeros(f_array))
+    f_matrix = numpy.matrix(add_initial_ending_zeros(f_array))
+    return f_matrix
+
 
 def get_u0_array(space_array):
     '''
@@ -335,7 +327,7 @@ def get_u0_array(space_array):
     u0 = numpy.array([bondary(xi) for xi in space_array])
     return u0
 
-def apply_equation_11(T, lambda_val, u, space_array):
+def apply_equation_11(T, lambda_val, u, space_array, f_function):
     '''
     funcao que aplica a equacao 11 do enunciado do ep
     @parameters:
@@ -344,6 +336,7 @@ def apply_equation_11(T, lambda_val, u, space_array):
     - u: array ((M+1)x(N+1)), matriz de temperaturas (uma matriz quase nula com bordas ajustadas 
          pelas condicoes de contorno)
     - space_array: array (1x(N+1)), contem todas as posicoes da barra
+    - f_function: funcao, funcao f(x,t) para o teste
     @output:
     - u: array ((M+1)x(N+1)), matriz de temperaturas com seus valores calculados segundo a equacao 11
     '''
@@ -351,7 +344,8 @@ def apply_equation_11(T, lambda_val, u, space_array):
     N = u.shape[1] - 1
     D = get_D_matrix(N, lambda_val)
     for k,_ in enumerate(u[1:], start = 1):
-        u[k, 1:N] = numpy.asarray(u[k-1].dot(D) + (T/M)*(get_f_matrix(space_array, k, T, M)))[0,1:N].reshape(N-1,)
+        f_array =f_function(space_array, k, T, M)
+        u[k, 1:N] = numpy.asarray(u[k-1].dot(D) + (T/M)*(f_array))[0,1:N].reshape(N-1,)
     return u
 
 def get_error(u, e):
@@ -366,13 +360,15 @@ def get_error(u, e):
     '''
     error_matrix = numpy.subtract(u, e)
     return error_matrix
-def run_test_vectorized(T, lambda_val, N, exact = False):
+
+def run_test_vectorized(T, lambda_val, N, f_function, exact = False):
     '''
     funcao que define a rotina de execucao do programa para determinados valores de T, lambda_val e N
     @parameters:
     - T: float, constante de tempo T
     - lambda_val: float, constante do problema
     - N: inteiro, numero de divisoes feitas na barra
+    - f_function, funcao f(x,t) para o teste
     - exact: bool, indicador se calcularemos a equacao exata ou a aproximacao
     @output:
     -~ M: inteiro, numero de divisoes no tempo
@@ -403,7 +399,7 @@ def run_test_vectorized(T, lambda_val, N, exact = False):
         g2 = numpy.zeros((time_array.shape))
         u = apply_boundary_conditions(zeros, u0, g1, g2)
         zeros = None
-        u = apply_equation_11(T, lambda_val, u, space_array)
+        u = apply_equation_11(T, lambda_val, u, space_array, f_function)
         last_line = u[-1]
         delta_time = round(time.time() - start_time, 3)
         return M, delta_time, time_array, space_array, u, last_line
@@ -420,9 +416,11 @@ def _1a(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320]):
     -
     '''
     main_dir = os.getcwd()
-    create_folder(lambda_list, path = main_dir)
+    create_folder(['figures/1a'], path = main_dir)
+    new_dir = os.path.join(main_dir, 'figures/1a')
+    create_folder(lambda_list, path = new_dir)
     for lambda_val in lambda_list:
-        lambda_dir = os.path.join(main_dir, str(lambda_val))
+        lambda_dir = os.path.join(new_dir, str(lambda_val))
         create_folder(N_list, path = lambda_dir)
         for N in N_list:
             n_dir = os.path.join(lambda_dir, str(N))
@@ -433,14 +431,14 @@ def _1a(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320]):
                  )
             # Solucao aproximada
             print(' '*18 + ' - Solucao ', colored('aproximada', 'yellow'), colored('local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())), 'green'))
-            M, delta_time_a, time_array, space_array, temperature_matrix, last_line_a = run_test_vectorized(T, lambda_val, N)
+            M, delta_time_a, time_array, space_array, temperature_matrix, last_line_a = run_test_vectorized(T, lambda_val, N, _1a_f)
             plot_temperatures(T, lambda_val, N, delta_time_a, space_array, temperature_matrix, 'Temperatura', n_dir, 'time_series')
             plot_heatmap(T, lambda_val, N, delta_time_a, space_array, time_array, temperature_matrix, 'Temperatura', n_dir, 'heatmap')
             temperature_matrix = None
 
             # Solucao exata
             print(' '*18 + ' - Solucao ', colored('exata', 'magenta'), colored('local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())), 'green'))
-            delta_time_e, exact_matrix, last_line_e = run_test_vectorized(T, lambda_val, N, exact = True)
+            delta_time_e, exact_matrix, last_line_e = run_test_vectorized(T, lambda_val, N, _1a_f, exact = True)
             plot_temperatures(T, lambda_val, N, delta_time_e, space_array, exact_matrix, 'Solução exata', n_dir, 'exact_time_series')
             plot_heatmap(T, lambda_val, N, delta_time_e, space_array, time_array, exact_matrix, 'Solução exata', n_dir, 'exact_heatmap')
             exact_matrix = None
@@ -450,6 +448,7 @@ def _1a(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320]):
             error_array = get_error(last_line_a, last_line_e)
             delta_time_total = delta_time_a + delta_time_e
             plot_error_array(T, lambda_val, N, delta_time_total, space_array, error_array, n_dir, 'error_series')
+            print(' '*18 + ' -', colored('Finalizado', 'cyan'), colored('local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())), 'green'))
 
 # Teste para lambda_val = 0.51
 def _1a_lambda(N_list):
@@ -461,3 +460,64 @@ def _1a_lambda(N_list):
     -
     '''
     _1a(T = 1, lambda_list = [0.51], N_list = N_list)
+
+def _1c_f(space_array, k, T, M, p = 0.25):
+    '''
+    funcao que define a f(x,t) para o item c) da primeira tarefa
+    @parameters:
+    - space_array: array (1x(N+1)), contem todas as posicoes da barra
+    - k: inteiro, indice da linha (ou seja, o instante de tempo) em que estamos calculado f
+    - T: float, constante de tempo T
+    - M: inteiro, numero de divisoes no tempo
+    @output:
+    - f_matrix: matrix (1x(N+1)), contem os valores de f calculados para um instante especifico k 
+                para as posicoes da barra exceto as extremas, estas sao substituidas por zeros
+    '''
+    N = space_array.shape[0] - 1
+    h = 1/N
+    t_delta = 1e-10 # Pequeno delta a ser adicionado aos intervalos de forma a
+                    # alarga-los e permitir que os erros de truncamento do python
+                    # e do numpy sejam equiparados.
+    x = space_array
+    inf = p - h/2 - t_delta
+    sup = p + h/2 + t_delta
+    g_array = numpy.piecewise(x,
+                              [x < inf, (x >= p - h/2) & (x <= p + h/2), x > sup],
+                              [   0   ,               1/h              ,   0    ]
+                             )
+    tal = 10000*(1-2*((k*T/M)**2))
+    f_array = g_array*tal
+    f_matrix = numpy.matrix(add_initial_ending_zeros(f_array[1:-1]))
+    return f_matrix
+
+    def _1c(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320]):
+    '''
+    funcao que roda o script do item c) da primeira tarefa,
+    rotina de execucao de todos os valores de T, lambda_val e N que precisam ser testados
+    @parameters:
+    - T: float, constante de tempo T
+    - lambda_list: lista, contém os valores de lambda_val
+    - N_list: lista, contém os valores de N
+    @output:
+    -
+    '''
+    main_dir = os.getcwd()
+    create_folder(['figures/1c'], path = main_dir)
+    new_dir = os.path.join(main_dir, 'figures/1c')
+    create_folder(lambda_list, path = new_dir)
+    for lambda_val in lambda_list:
+        lambda_dir = os.path.join(new_dir, str(lambda_val))
+        create_folder(N_list, path = lambda_dir)
+        for N in N_list:
+            n_dir = os.path.join(lambda_dir, str(N))
+            print('Iniciando execucao -', 
+                  colored('lambda_val = {}'.format(lambda_val), 'blue'), 
+                  colored('N = {}'.format(N), 'red'),
+                  colored('local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())), 'green')
+                 )
+            # Solucao aproximada
+            print(' '*18 + ' - Solucao ', colored('aproximada', 'yellow'), colored('local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())), 'green'))
+            M, delta_time_a, time_array, space_array, temperature_matrix, last_line_a = run_test_vectorized(T, lambda_val, N, _1c_f)
+            plot_temperatures(T, lambda_val, N, delta_time_a, space_array, temperature_matrix, 'Temperatura', n_dir, 'time_series')
+            plot_heatmap(T, lambda_val, N, delta_time_a, space_array, time_array, temperature_matrix, 'Temperatura', n_dir, 'heatmap')
+            temperature_matrix = None
