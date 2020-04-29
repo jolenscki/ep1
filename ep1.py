@@ -227,22 +227,22 @@ def add_initial_ending_zeros(array):
     final_array = numpy.concatenate((final_array, numpy.zeros(1)))
     return final_array
 
-def get_D_matrix(N, lambda_val):
+def get_A_matrix(N, lambda_val):
     '''
-    funcao para obter a matriz tri-diagonal D a partir do valor de lambda
+    funcao para obter a matriz tri-diagonal A a partir do valor de lambda
     @parameters:
     - N: inteiro, numero de divisoes na barra
     - lambda_val: float, constante do problema
     @output:
-    - D_matrix: matrix ((M+1)x(N+1)), matriz tridiagonal
+    - A_matrix: matrix ((M+1)x(N+1)), matriz tridiagonal
     '''
     a = numpy.diagflat(lambda_val * numpy.ones(N), 1)
     b = numpy.diagflat((1-2*lambda_val) * numpy.ones(N+1))
     c = numpy.diagflat(lambda_val * numpy.ones(N), -1)
-    D_matrix = numpy.matrix(a+b+c)
-    D_matrix[:,0] = numpy.zeros((N+1, 1))
-    D_matrix[:,-1] = numpy.zeros((N+1, 1))
-    return D_matrix
+    A_matrix = numpy.matrix(a+b+c)
+    A_matrix[:,0] = numpy.zeros((N+1, 1))
+    A_matrix[:,-1] = numpy.zeros((N+1, 1))
+    return A_matrix
 
 def e(space_array, k, T, M):
     '''
@@ -342,10 +342,10 @@ def apply_equation_11(T, lambda_val, u, space_array, f_function):
     '''
     M = u.shape[0] - 1
     N = u.shape[1] - 1
-    D = get_D_matrix(N, lambda_val)
+    A = get_A_matrix(N, lambda_val)
     for k,_ in enumerate(u[1:], start = 1):
         f_array =f_function(space_array, k, T, M)
-        u[k, 1:N] = numpy.asarray(u[k-1].dot(D) + (T/M)*(f_array))[0,1:N].reshape(N-1,)
+        u[k, 1:N] = numpy.asarray(u[k-1].dot(A) + (T/M)*(f_array))[0,1:N].reshape(N-1,)
     return u
 
 def get_error(u, e):
@@ -521,3 +521,31 @@ def _1c_f(space_array, k, T, M, p = 0.25):
             plot_temperatures(T, lambda_val, N, delta_time_a, space_array, temperature_matrix, 'Temperatura', n_dir, 'time_series')
             plot_heatmap(T, lambda_val, N, delta_time_a, space_array, time_array, temperature_matrix, 'Temperatura', n_dir, 'heatmap')
             temperature_matrix = None
+
+
+def perform_ldlt_transformation(a, b):
+    '''
+    funcao que aplica a decomposicao de uma matriz tridiagonal simetrica
+    na multiplicacao de 3 outras, de forma que A = L.D.L'
+    @parameters:
+    - a: array, array unidimensional generica que representa os valores da 
+         diagonal principal
+    - b: array, array unidimensional generica que representa os valores da 
+         diagonal secundaria, seu primeiro valor e nulo (b[0] = 0)
+    -> a e b possuem a mesma dimensao
+    @output:
+    - d: array, array unidimensional de mesma dimensao que a e b e que repre-
+         senta a diagonal principal da matriz D
+    - l: array, array unidimensional de mesma dimensao que a e b e que repre-
+         senta a diagonal secundaria inferior da matriz L e também a diagonal 
+         secundaria superior de L', seu primeiro valor e nulo (l[0] = 0)
+    '''
+    N = a.shape[0] - 1
+    d = numpy.zeros(N-1)
+    l = numpy.zeros(N-1)
+    d[0] = a[0]
+    for i in range(N-2):
+        l[i+1] = b[i+1]/d[i]
+        d[i+1] = a[i+1] - b[i+1]*l[i+1]
+    return d, l
+
