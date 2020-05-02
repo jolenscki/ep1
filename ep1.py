@@ -713,7 +713,7 @@ def _1a(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], m
         for N in N_list:
             n_dir = os.path.join(lambda_dir, str(N))
             print('Iniciando execucao -',
-                  colored('método = '.format(method), 'grey')
+                  colored('método = '.format(method), 'grey'),
                   colored('lambda_val = {}'.format(lambda_val), 'blue'), 
                   colored('N = {}'.format(N), 'red'),
                   colored('local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())), 'green')
@@ -773,7 +773,7 @@ def _1b(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], m
         for N in N_list:
             n_dir = os.path.join(lambda_dir, str(N))
             print('Iniciando execucao -',
-                  colored('método = '.format(method), 'grey')
+                  colored('método = '.format(method), 'grey'),
                   colored('lambda_val = {}'.format(lambda_val), 'blue'), 
                   colored('N = {}'.format(N), 'red'),
                   colored('local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())), 'green')
@@ -824,7 +824,7 @@ def _1c(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], m
         for N in N_list:
             n_dir = os.path.join(lambda_dir, str(N))
             print('Iniciando execucao -',
-                  colored('método = '.format(method), 'grey')
+                  colored('método = '.format(method), 'grey'),
                   colored('lambda_val = {}'.format(lambda_val), 'blue'), 
                   colored('N = {}'.format(N), 'red'),
                   colored('local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())), 'green')
