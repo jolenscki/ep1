@@ -242,6 +242,7 @@ def get_A_matrix(N, lambda_val, method):
     -~ A_matrix: matrix ((M+1)x(N+1)), matriz tridiagonal com bordas nulas, para o metodo
                  de euler
     -~ A_matrix: matrix ((N-1)x(N-1)), matriz tridiagonal para o metodo de euler implicito
+                 e para o metodo de crank-nicolson
     '''
     if method == 'euler':
         a = numpy.diagflat(lambda_val * numpy.ones(N), 1)
@@ -254,6 +255,11 @@ def get_A_matrix(N, lambda_val, method):
         a = numpy.diagflat(- lambda_val * numpy.ones(N-2), 1)
         b = numpy.diagflat((1+2*lambda_val) * numpy.ones(N-1))
         c = numpy.diagflat(- lambda_val * numpy.ones(N-2), -1)
+        A_matrix = numpy.matrix(a+b+c)
+    elif method == 'crank_nicolson':
+        a = numpy.diagflat(- lambda_val/2 * numpy.ones(N-2), 1)
+        b = numpy.diagflat((1+lambda_val) * numpy.ones(N-1))
+        c = numpy.diagflat(- lambda_val/2 * numpy.ones(N-2), -1)
         A_matrix = numpy.matrix(a+b+c)
     return A_matrix
 
@@ -475,16 +481,53 @@ def apply_estimated_solution(T, lambda_val, u, space_array, f_function, method):
     M = u.shape[0] - 1
     N = u.shape[1] - 1
     A = get_A_matrix(N, lambda_val, method)
+    delta_t = T/M
     if method == 'euler':
         for k,_ in enumerate(u[1:], start = 1):
             f_array =f_function(space_array, k, T, M)
-            u[k, 1:N] = numpy.asarray(u[k-1].dot(A) + (T/M)*(f_array))[0,1:N].reshape(N-1,)
+            u[k, 1:N] = numpy.asarray(u[k-1].dot(A) + delta_t*(f_array))[0,1:N].reshape(N-1,)
+            
     elif method == 'implicit_euler':
         for k,_ in enumerate(u[1:], start = 1):
-            f_array = f_function(space_array, k, T, M)
-            upper_element = numpy.array([u[k-1, 1] + (T/N)*f_array[0, 1] + lambda_val*u[k, 0]])
-            mid_elements = numpy.asarray(u[k-1, 2:N-1] + (T/N)*f_array[0, 2:N-1]).ravel()
-            lower_element = numpy.array([u[k-1, N-1] + (T/N)*f_array[0, N-1] + lambda_val*u[k, -1]])
+            f_array = numpy.asarray(f_function(space_array, k, T, M)).ravel()
+            upper_element = numpy.array([
+                                        u[k-1, 1] + 
+                                        delta_t*f_array[1] + 
+                                        lambda_val*u[k, 0]
+                                        ])
+            mid_elements = numpy.asarray(
+                                        u[k-1, 2:N-1] + 
+                                        delta_t*f_array[2:N-1]
+                                        ).ravel()
+            lower_element = numpy.array([
+                                        u[k-1, N-1] + 
+                                        delta_t*f_array[N-1] + 
+                                        lambda_val*u[k, -1]
+                                        ])
+            linsys_asw = numpy.concatenate((upper_element, mid_elements, lower_element))
+            u[k, 1:N] = solve_linear_system(A, linsys_asw)
+            
+    elif method == 'crank_nicolson':
+        f_array_anterior = numpy.asarray(f_function(space_array, 0, T, M)).ravel()
+        for k,_ in enumerate(u[1:], start = 1):
+            f_array_atual = numpy.asarray(f_function(space_array, k, T, M)).ravel()
+            f_array_mean = (delta_t/2)*(f_array_anterior + f_array_atual)
+            f_array_anterior = f_array_atual
+            upper_element = numpy.array([
+                                        (1 - lambda_val)*u[k-1, 1] + 
+                                        (lambda_val/2)*(u[k-1, 2] + u[k-1, 0] + u[k, 0]) + 
+                                        f_array_mean[1]
+                                        ])
+            mid_elements = numpy.asarray(
+                                        (1 - lambda_val) *u[k-1, 2:N-1] -
+                                        (lambda_val/2)*(u[k-1, 1:N-2] + u[k-1, 3:N]) +
+                                        f_array_mean[2:N-1]
+                                        ).ravel()
+            lower_element = numpy.array([
+                                        (1 - lambda_val)*u[k-1, N-1] +
+                                        (lambda_val/2)*(u[k-1, N-2] + u[k-1, -1] + u[k, -1]) +
+                                        f_array_mean[N-1]
+                                        ])
             linsys_asw = numpy.concatenate((upper_element, mid_elements, lower_element))
             u[k, 1:N] = solve_linear_system(A, linsys_asw)
     return u
@@ -669,7 +712,8 @@ def _1a(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], m
         create_folder(N_list, path = lambda_dir)
         for N in N_list:
             n_dir = os.path.join(lambda_dir, str(N))
-            print('Iniciando execucao -', 
+            print('Iniciando execucao -',
+                  colored('método = '.format(method), 'grey')
                   colored('lambda_val = {}'.format(lambda_val), 'blue'), 
                   colored('N = {}'.format(N), 'red'),
                   colored('local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())), 'green')
@@ -696,7 +740,7 @@ def _1a(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], m
             print(' '*18 + ' -', colored('Finalizado', 'cyan'), colored('local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())), 'green'))
 
 # Teste para lambda_val = 0.51
-def _1a_lambda(N_list):
+def _1a_lambda(N_list, method = 'euler'):
     '''
     funcao que testa o comportamento da funcao para lambda_val = 0.51
     @parameters:
@@ -704,7 +748,7 @@ def _1a_lambda(N_list):
     @output:
     - None
     '''
-    _1a(T = 1, lambda_list = [0.51], N_list = N_list)
+    _1a(T = 1, lambda_list = [0.51], N_list = N_list, method = method)
 
 def _1b(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], method = 'euler'):
     '''
@@ -728,7 +772,8 @@ def _1b(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], m
         create_folder(N_list, path = lambda_dir)
         for N in N_list:
             n_dir = os.path.join(lambda_dir, str(N))
-            print('Iniciando execucao -', 
+            print('Iniciando execucao -',
+                  colored('método = '.format(method), 'grey')
                   colored('lambda_val = {}'.format(lambda_val), 'blue'), 
                   colored('N = {}'.format(N), 'red'),
                   colored('local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())), 'green')
@@ -778,7 +823,8 @@ def _1c(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], m
         create_folder(N_list, path = lambda_dir)
         for N in N_list:
             n_dir = os.path.join(lambda_dir, str(N))
-            print('Iniciando execucao -', 
+            print('Iniciando execucao -',
+                  colored('método = '.format(method), 'grey')
                   colored('lambda_val = {}'.format(lambda_val), 'blue'), 
                   colored('N = {}'.format(N), 'red'),
                   colored('local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())), 'green')
@@ -790,3 +836,10 @@ def _1c(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], m
             plot_heatmap(T, lambda_val, N, delta_time_a, space_array, time_array, temperature_matrix, 'Temperatura', n_dir, 'heatmap')
             temperature_matrix = None
 
+def main():
+    method_list = ['euler', 'implicit_euler', 'crank_nicolson']
+    for method in method_list:
+        _1a(method = method)
+        _1a_lambda(N_list = [10,20,40], method = method)
+        _1b(method = method)
+        _1c(method = method)
