@@ -27,12 +27,6 @@ params = {'legend.fontsize': 'x-large',
          'ytick.labelsize':'x-large'}
 plt.rcParams.update(params)
 
-# Lista com os nomes dos metodos
-methods_list = ['euler', 'crank_nicolson', 'implicit_euler']
-# Dicionario com as funcoes f de cada teste
-tests_dic = {'a' : {'f_function': _1a_f}, 'b' : {'f_function': _1b_f}, 'c' : {'f_function': _1c_f}}
-# Lista com as keys do dicionario acima
-tests_list = list(tests_dic.keys())
 
 
 def create_folder(folder_list, path = os.getcwd()):
@@ -804,6 +798,14 @@ def run_set_of_tests(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80,
                  )
                 generate_plots(T, lambda_val, N, N_dir, method, test)
 
+# Lista com os nomes dos metodos
+methods_list = ['euler', 'crank_nicolson', 'implicit_euler']
+# Dicionario com as funcoes f de cada teste
+tests_dic = {'a' : {'f_function': _1a_f}, 'b' : {'f_function': _1b_f}, 'c' : {'f_function': _1c_f}}
+# Lista com as keys do dicionario acima
+tests_list = list(tests_dic.keys())
+
+                
 def main():
     '''
     funcao main() do ep, roda todos os testes requisitados
