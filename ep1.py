@@ -8,6 +8,7 @@
 
 # Bibliotecas
 import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter
 import numpy as np
 import os
 import sys
@@ -223,6 +224,59 @@ def plot_error_array(T, lambda_val, N, delta_time, space_array, error_array, pat
     plt.savefig(savedir, dpi = 300, bbox_inches="tight")
     plt.close()
     return ax, max_error
+
+def plot_convergence_order(method, test, error_list):
+    '''
+    funcao que executa o plot dos erros maximos para cada valor de N
+    para a analise de convergencia de cada metodo
+    @parameters:
+    - method: string, metodo empregado
+    -- example: 'euler', 'implicit_euler', 'crank_nicolson'
+    - test: string, teste a ser feito
+    -- example: 'a', 'b', 'c'
+    - error_list: list, lista de inteiros (ou lista de listas de inteiros)
+                  que contem os erros maximos para cada teste
+    '''
+    max_val = 0
+    is_list_list = False
+    
+    _dir = os.path.join(os.getcwd(), 'figures')
+    create_folder(['error_analysis'], path = _dir)
+    path = os.path.join(_dir, 'error_analysis')
+    if any(isinstance(el, list) for el in error_list): #caso a, em que temos 2 lambdas
+        is_list_list = True
+        N_list = [10*(2**i) for i in range(len(error_list[0]))]
+        for i in range(len(error_list)):
+            plt_list = [float(el) for el in error_list[i]]
+            max_val = max(max_val, max(plt_list))
+            plt.scatter(N_list, plt_list, label = r'${} $'.format(0.25*(i+1)))
+    else:
+        N_list = [10*(2**i) for i in range(len(error_list))]
+        plt_list = [float(el) for el in error_list]
+        max_val = max(plt_list)
+        plt.scatter(N_list, plt_list)
+    ax = plt.gca()
+    title_string = r'Ordem de convergência do método {} para a função ${}$'.format(format_method(method), test)
+    plt.suptitle(title_string, y=1.0, fontsize = 18)
+    ax.set_xlabel(r'$N$')
+    ax.set_ylabel(r'Módulo do máximo erro')
+    
+    if is_list_list:
+        leg = ax.legend(loc='right', bbox_to_anchor=(1.25, 0.5))
+        leg.set_title(r'Valor de $\lambda$', prop = {'size': 14})
+    ax.set_ylim([0,1.05*max_val])
+    ax.set_xscale('log', basex = 2)
+    
+    formatter = ScalarFormatter()
+    formatter.set_scientific(False)
+    
+    ax.xaxis.set_major_formatter(formatter)
+    plt.xticks(N_list)
+    filename = method+ '_' + test
+    savedir = os.path.join(path, filename + '.png')
+    plt.savefig(savedir, dpi = 300, bbox_inches="tight")
+    plt.close()
+    return ax
     
 def plot_heatmap(T, lambda_val, N, delta_time, space_array, time_array, temperature_matrix, title, path, filename, method, test):
     '''
@@ -831,24 +885,9 @@ def main():
     for method in methods_list:
         error_dic[method] = {}
         for test in tests_list:
-            error_list = run_set_of_tests(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40], method = method, test = test)
+            error_list = run_set_of_tests(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], method = method, test = test)
             error_dic[method][test] = error_list
-    run_set_of_tests(T = 1, lambda_list = [0.51], N_list = [10, 20, 40], method = 'euler', test = 'a')
+            if test != 'c':
+                plot_convergence_order(method, test, error_list)
 
-def plot_convergence_order(method, test, error_list, path, filename):
-    N_list = [10, 20, 40]
-    if any(isinstance(el, list) for el in error_list): #caso a, em que temos 2 lambdas
-        for i in range(len(error_list)):
-            plt.scatter(N_list, error_list[i], label = r'${} $'.format(0.25*(i+1)))
-    else:
-        plt.scatter(N_list, error_list)
-    ax = plt.gca()
-    title_string = r'Ordem de convergência do método {} para a função {}'.format(format_method(method), test)
-    plt.suptitle(title_string, y=1.0, fontsize = 18)
-    ax.set_xlabel(r'$N$')
-    ax.set_ylabel(r'Módulo do máximo erro')
-    ax.legend(loc='right', bbox_to_anchor=(1.25, 0.5))
-    savedir = os.path.join(path, filename + '.png')
-    plt.savefig(savedir, dpi = 300, bbox_inches="tight")
-    plt.close()
-    return ax
+    run_set_of_tests(T = 1, lambda_list = [0.51], N_list = [10, 20, 40], method = 'euler', test = 'a')
