@@ -14,7 +14,6 @@ import sys
 import time
 import datetime
 import math
-import pandas as pd # importando pandas para melhor visualizar as matrizes
 
 # Parametros estaticos do matplotlib
 plt.rcParams['mathtext.fontset'] = 'cm'
@@ -202,29 +201,28 @@ def plot_error_array(T, lambda_val, N, delta_time, space_array, error_array, pat
     - error_matrix: array (1x(N+1)), array de erros associados a aproximacao
     - path: string, caminho ate o local onde o arquivo sera salvo
     - filename: string, nome com o qual o arquivo sera salvo
-    - method: string, metodo empregado
-    -- example: 'euler', 'implicit_euler', 'crank_nicolson'
-    - test: string, teste a ser feito
-    -- example: 'a', 'b', 'c'
     @output:
     - ax: axis (objeto de eixo do mpl)
+    - max_error: float, valor absoluto do maior erro contido na array error_matrix
     '''
     plt.plot(space_array, error_array)
     
     ax = plt.gca()
+    d_time = round(delta_time, 3)
+    max_error = '{:.2e}'.format(np.absolute(error_array).max())
     title_string = r'Erro em função da posição para o instante $t = T$ no método de {}'.format(format_method(method))
     if method == 'euler':
-        subtitle_string = r'$função = {}, \;T = {},\; \lambda = {},\; N = {},\;$Tempo de execução$:\; {}$ segundos'.format(test, T, lambda_val, N, delta_time)
+        subtitle_string = r'$função = {}, \;T = {},\; \lambda = {},\; N = {},\;$Tempo de execução$:\; {}$ segundos, Erro máximo:$\; {}$'.format(test, T, lambda_val, N, d_time, max_error.replace('e-', '$e-$'))
     else:
-        subtitle_string = r'$função = {}, \;T = {},\; N = {},\;$Tempo de execução$:\; {}$ segundos'.format(test, T, N, delta_time)
+        subtitle_string = r'$função = {}, \;T = {},\; N = {},\;$Tempo de execução$:\; {}$ segundos, Erro máximo:$\; {}$'.format(test, T, N, d_time, max_error.replace('e-', '$e-$'))
     plt.suptitle(title_string, y=1.0, fontsize = 18)
     ax.set_title(subtitle_string, fontsize = 14)
     ax.set_xlabel(r'Posição na barra ($x$)')
-    ax.set_ylabel(r'Magnitude do erro')
+    ax.set_ylabel(r'Erro')
     savedir = os.path.join(path, filename + '.png')
     plt.savefig(savedir, dpi = 300, bbox_inches="tight")
     plt.close()
-    return ax
+    return ax, max_error
     
 def plot_heatmap(T, lambda_val, N, delta_time, space_array, time_array, temperature_matrix, title, path, filename, method, test):
     '''
@@ -719,9 +717,11 @@ def generate_plots(T, lambda_val, N, _dir, method, test):
     - test: string, representa qual a funcao empregada bem como as condicoes 
             de contorno
     @output:
-    - None
+    -~ max_error: float, valor absoluto do maior erro contido na array error_matrix
     '''
     f_function = tests_dic[test]['f_function']
+    max_error = 0 # definindo valor padrao de max_error para o caso (c) em que ele nao e aplicavel
+    
     exact = False
     print(' '*18 + ' - Solucao', 'aproximada', 'local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())))
     M, delta_time_a, time_array, space_array, temperature_matrix, last_line_a = run_vectorized(T, lambda_val, N, f_function, exact = exact, method = method)
@@ -740,9 +740,12 @@ def generate_plots(T, lambda_val, N, _dir, method, test):
         print(' '*18 + ' -', 'Erro associado', 'local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())))
         error_array = get_error(last_line_a, last_line_e)
         delta_time_total = delta_time_a + delta_time_e
-        plot_error_array(T, lambda_val, N, delta_time_total, space_array, error_array, _dir, 'error_series', method = method, test = test)
+        ax, max_error = plot_error_array(T, lambda_val, N, delta_time_total, space_array, error_array, _dir, 'error_series', method = method, test = test)
         print(' '*18 + ' -','Finalizado', 'local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime())))
-
+    
+    return max_error
+        
+        
 def run_set_of_tests(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], method = 'euler', test = 'a'):
     '''
     funcao que organiza os testes, rodando em sequencia varios deles para
@@ -761,8 +764,11 @@ def run_set_of_tests(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80,
             de contorno
     -- default_value: 'a'
     @output:
-    - None
-    ''' 
+    - error_list: list, lista que guarda o maior valor de erro para
+                 cada valor de N (e lambda_val) para a analise da ordem de 
+                 convergencia
+    '''
+    error_list = []
     _dir = os.getcwd()
     create_folder(['figures'], path = _dir)
     _dir = os.path.join(_dir, 'figures')
@@ -781,12 +787,15 @@ def run_set_of_tests(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80,
                   'N = {}'.format(N),
                   'local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime()))
                  )
-            generate_plots(T, lambda_val, N, N_dir, method, test)
+            max_error = generate_plots(T, lambda_val, N, N_dir, method, test)
+            error_list.append(max_error)
+            
     else:
         create_folder(lambda_list, path = _dir)
         for lambda_val in lambda_list:
             lambda_dir = os.path.join(_dir, str(lambda_val))
             create_folder(N_list, path = lambda_dir)
+            _list = []
             for N in N_list:
                 N_dir = os.path.join(lambda_dir, str(N))
                 print('Iniciando execucao -',
@@ -796,8 +805,12 @@ def run_set_of_tests(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80,
                   'lambda_val = {}'.format(lambda_val),
                   'local_time = {}'.format(time.strftime('%H:%M:%S', time.localtime()))
                  )
-                generate_plots(T, lambda_val, N, N_dir, method, test)
-
+                max_error = generate_plots(T, lambda_val, N, N_dir, method, test)
+                _list.append(max_error)
+            error_list.append(_list)
+            
+    return error_list
+            
 # Lista com os nomes dos metodos
 methods_list = ['euler', 'crank_nicolson', 'implicit_euler']
 # Dicionario com as funcoes f de cada teste
@@ -814,7 +827,28 @@ def main():
     @output:
     - None
     '''
+    error_dic = {}
     for method in methods_list:
+        error_dic[method] = {}
         for test in tests_list:
-            run_set_of_tests(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], method = method, test = test)
+            error_list = run_set_of_tests(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40], method = method, test = test)
+            error_dic[method][test] = error_list
     run_set_of_tests(T = 1, lambda_list = [0.51], N_list = [10, 20, 40], method = 'euler', test = 'a')
+
+def plot_convergence_order(method, test, error_list, path, filename):
+    N_list = [10, 20, 40]
+    if any(isinstance(el, list) for el in error_list): #caso a, em que temos 2 lambdas
+        for i in range(len(error_list)):
+            plt.scatter(N_list, error_list[i], label = r'${} $'.format(0.25*(i+1)))
+    else:
+        plt.scatter(N_list, error_list)
+    ax = plt.gca()
+    title_string = r'Ordem de convergência do método {} para a função {}'.format(format_method(method), test)
+    plt.suptitle(title_string, y=1.0, fontsize = 18)
+    ax.set_xlabel(r'$N$')
+    ax.set_ylabel(r'Módulo do máximo erro')
+    ax.legend(loc='right', bbox_to_anchor=(1.25, 0.5))
+    savedir = os.path.join(path, filename + '.png')
+    plt.savefig(savedir, dpi = 300, bbox_inches="tight")
+    plt.close()
+    return ax
