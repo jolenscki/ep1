@@ -27,6 +27,9 @@ params = {'legend.fontsize': 'x-large',
          'ytick.labelsize':'x-large'}
 plt.rcParams.update(params)
 
+# Constantes
+
+DPI = 150 # qualidade da imagem de output
 
 
 def create_folder(folder_list, path = os.getcwd()):
@@ -187,7 +190,7 @@ def plot_temperatures(T, lambda_val, N, delta_time, space_array, temperature_mat
     ax.set_ylabel(r'{}'.format(title))
     ax.legend(loc='right', bbox_to_anchor=(1.25, 0.5))
     savedir = os.path.join(path, filename + '.png')
-    plt.savefig(savedir, dpi = 300, bbox_inches="tight")
+    plt.savefig(savedir, dpi = DPI, bbox_inches="tight")
     plt.close()
     return ax
     
@@ -221,7 +224,7 @@ def plot_error_array(T, lambda_val, N, delta_time, space_array, error_array, pat
     ax.set_xlabel(r'Posição na barra ($x$)')
     ax.set_ylabel(r'Erro')
     savedir = os.path.join(path, filename + '.png')
-    plt.savefig(savedir, dpi = 300, bbox_inches="tight")
+    plt.savefig(savedir, dpi = DPI, bbox_inches="tight")
     plt.close()
     return ax, max_error
 
@@ -280,7 +283,7 @@ def plot_convergence_order(method, test, error_list):
     plt.xticks(N_list)
     filename = method+ '_' + test
     savedir = os.path.join(path, filename + '.png')
-    plt.savefig(savedir, dpi = 300, bbox_inches="tight")
+    plt.savefig(savedir, dpi = DPI, bbox_inches="tight")
     plt.close()
     return ax
     
@@ -324,7 +327,7 @@ def plot_heatmap(T, lambda_val, N, delta_time, space_array, time_array, temperat
     ax.set_xlabel(r'Posição na barra ($x$)')
     ax.set_ylabel(r'Tempo ($t$)')    
     savedir = os.path.join(path, filename + '.png')
-    plt.savefig(savedir, dpi = 300, bbox_inches="tight")
+    plt.savefig(savedir, dpi = DPI, bbox_inches="tight")
     plt.close()
     return ax
 
