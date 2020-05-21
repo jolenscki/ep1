@@ -16,7 +16,7 @@ import time
 import datetime
 import math
 
-# Parametros estaticos do matplotlib
+# Parametros esteticos do matplotlib
 plt.rcParams['mathtext.fontset'] = 'cm'
 plt.rcParams['font.family'] = 'STIXGeneral'
 params = {'legend.fontsize': 'x-large',
@@ -250,11 +250,17 @@ def plot_convergence_order(method, test, error_list):
             plt_list = [float(el) for el in error_list[i]]
             max_val = max(max_val, max(plt_list))
             plt.scatter(N_list, plt_list, label = r'${} $'.format(0.25*(i+1)))
+            red = np.array(plt_list)
+            red = (red[1:] / red[:-1]).mean()
+            print("Fator de redução no Método de %s para o teste %s e lambda_val %f: %f" %(method, test, 0.25*(i+1), red))
     else:
         N_list = [10*(2**i) for i in range(len(error_list))]
         plt_list = [float(el) for el in error_list]
         max_val = max(plt_list)
         plt.scatter(N_list, plt_list)
+        red = np.array(plt_list)
+        red = (red[1:] / red[:-1]).mean()
+        print("Fator de redução no Método de %s para o teste %s: %f" %(method, test, red))
     ax = plt.gca()
     title_string = r'Ordem de convergência do método {} para a função ${}$'.format(format_method(method), test)
     plt.suptitle(title_string, y=1.0, fontsize = 18)
@@ -656,7 +662,7 @@ def run_vectorized(T, lambda_val, N, f_function, exact = False, method = 'euler'
     - T: float, constante de tempo T
     - lambda_val: float, constante do problema
     - N: inteiro, numero de divisoes feitas na barra
-    - f_function, funcao f(x,t) para o teste
+    - f_function: function, funcao f(x,t) para o teste
     - exact: bool, indicador se calcularemos a equacao exata ou a aproximacao
     -- default_value: False
     - method: string, representa qual o metodo empregado na resolucao da integracao numerica
@@ -885,7 +891,7 @@ def main():
     for method in methods_list:
         error_dic[method] = {}
         for test in tests_list:
-            error_list = run_set_of_tests(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40, 80, 160, 320], method = method, test = test)
+            error_list = run_set_of_tests(T = 1, lambda_list = [0.25, 0.5], N_list = [10, 20, 40], method = method, test = test)
             error_dic[method][test] = error_list
             if test != 'c':
                 plot_convergence_order(method, test, error_list)
