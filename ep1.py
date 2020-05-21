@@ -152,6 +152,43 @@ def format_method(method):
     '''
     method = (' ').join(method.split('_')).title()
     return method
+
+def format_filename(lambda_val, N, filename, method, test):
+    '''
+    funcao para formatar o filename que sera salvo.
+    @parameters:
+    - lambda_val: float, constante do problema
+    - N: inteiro, numero de divisoes na barra
+    - filename: string, nome que identifica a operacao
+    -- example: 'time_series', 'exact_heatmap', 'error_series'
+    - method: string, metodo empregado
+    - test: string, teste a ser feito
+    @output:
+    - _filename: string, nome com o qual o arquivo sera efetivamente salvo
+    '''
+    method_dic = {'euler': 'E', 'implicit_euler': 'I', 'crank_nicolson': 'C'}
+    if method == 'euler':
+        lambda_string = str(int(100*lambda_val)).zfill(3)
+    else:
+        lambda_string = ''
+    if filename == 'time_series':
+        error_string = ''
+        heatmap_string = ''
+    elif filename == 'error_series':
+        error_string = 'E'
+        heatmap_string = ''
+    elif filename == 'heatmap':
+        error_string = ''
+        heatmap_string = 'H'
+    elif filename == 'exact_time_series':
+        error_string = 'Ex'
+        heatmap_string = ''
+    elif filename == 'exact_heatmap':
+        error_string = 'Ex'
+        heatmap_string = 'H'
+    N_string = str(N).zfill(3)
+    _filename = heatmap_string+method_dic[method]+test+error_string+lambda_string+N_string
+    return _filename
     
 def plot_temperatures(T, lambda_val, N, delta_time, space_array, temperature_matrix, title, path, filename, method, test):
     '''
@@ -189,7 +226,7 @@ def plot_temperatures(T, lambda_val, N, delta_time, space_array, temperature_mat
     ax.set_xlabel(r'Posição na barra ($x$)')
     ax.set_ylabel(r'{}'.format(title))
     ax.legend(loc='right', bbox_to_anchor=(1.25, 0.5))
-    savedir = os.path.join(path, filename + '.png')
+    savedir = os.path.join(path, format_filename(lambda_val, N, filename, method, test) + '.png')
     plt.savefig(savedir, dpi = DPI, bbox_inches="tight")
     plt.close()
     return ax
@@ -223,7 +260,7 @@ def plot_error_array(T, lambda_val, N, delta_time, space_array, error_array, pat
     ax.set_title(subtitle_string, fontsize = 14)
     ax.set_xlabel(r'Posição na barra ($x$)')
     ax.set_ylabel(r'Erro')
-    savedir = os.path.join(path, filename + '.png')
+    savedir = os.path.join(path, format_filename(lambda_val, N, filename, method, test) + '.png')
     plt.savefig(savedir, dpi = DPI, bbox_inches="tight")
     plt.close()
     return ax, max_error
@@ -326,7 +363,7 @@ def plot_heatmap(T, lambda_val, N, delta_time, space_array, time_array, temperat
     ax.set_title(subtitle_string, fontsize = 14)
     ax.set_xlabel(r'Posição na barra ($x$)')
     ax.set_ylabel(r'Tempo ($t$)')    
-    savedir = os.path.join(path, filename + '.png')
+    savedir = os.path.join(path, format_filename(lambda_val, N, filename, method, test) + '.png')
     plt.savefig(savedir, dpi = DPI, bbox_inches="tight")
     plt.close()
     return ax
