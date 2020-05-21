@@ -16,7 +16,7 @@ import time
 import datetime
 import math
 
-# Parametros esteticos do matplotlib
+# Parametros estaticos do matplotlib
 plt.rcParams['mathtext.fontset'] = 'cm'
 plt.rcParams['font.family'] = 'STIXGeneral'
 params = {'legend.fontsize': 'x-large',
@@ -593,7 +593,7 @@ def apply_estimated_solution(T, lambda_val, u, space_array, f_function, method):
     delta_t = T/M
     if method == 'euler':
         for k,_ in enumerate(u[1:], start = 1):
-            f_array =f_function(space_array, k, T, M)
+            f_array =f_function(space_array, k-1, T, M)
             u[k, 1:N] = np.asarray(u[k-1].dot(A) + delta_t*(f_array))[0,1:N].reshape(N-1,)
             
     elif method == 'implicit_euler':
@@ -662,7 +662,7 @@ def run_vectorized(T, lambda_val, N, f_function, exact = False, method = 'euler'
     - T: float, constante de tempo T
     - lambda_val: float, constante do problema
     - N: inteiro, numero de divisoes feitas na barra
-    - f_function: function, funcao f(x,t) para o teste
+    - f_function, funcao f(x,t) para o teste
     - exact: bool, indicador se calcularemos a equacao exata ou a aproximacao
     -- default_value: False
     - method: string, representa qual o metodo empregado na resolucao da integracao numerica
