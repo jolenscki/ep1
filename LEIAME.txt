@@ -1,0 +1,39 @@
+>>EP1 Numérico
+>>Instruções de uso.
+>>Joao Rodrigo Windisch Olenscki
+>>Luca Rodrigues Miguel
+>>
+>>Estruturação do código
+>>O código foi estruturado em pequenas funções que executam cada qual pequenas
+>>tarefas. A principal função é a função main(), que executa todos os testes 
+>>de todos os métodos. Ela exige uma lista de métodos e uma lista de testes,
+>>sendo que estes estão decritos imediatamente acima da definição da função e,
+>>por isto, pedimos que estas constantes não sejam alteradas. A função main() 
+>>executa ainda o teste de lambda_val = 0.51 no método de euler para o item a)
+>>
+>>EM QUE LINGUAGEM FOI ESCRITO O EP?
+>>Este EP foi escrito em Python.
+>>
+>>COMO RODO TODOS OS TESTES REQUISITADOS NO ENUNCIADO?
+>>Para rodar todos os testes requisitados no enunciado (i.e. funções a, b e c
+>>e métodos de 'euler', 'euler implícito' e 'crank-nicolson') basta que você
+>>execute a função main() do código.
+>>
+>>COMO RODO UM TESTE ESPECÍFICO DO EP?
+>>Para rodar um teste específico, basta que você rode a função
+>>run_set_of_tests(T = 1, lambda_list = [0.25], 
+>>                 N_list = [80], method = 'implicit_euler', test = 'c')
+>>Lembre-se de dar um valor para lambda_list mesmo se o método não o exija
+>>(se o lambda não for necessário para o método em específico, o programa
+>>sobrescreverá seu valor de qualquer forma) e coloque todos os valores de
+>>lambda e N dentro de listas. Além disso, verifique a sintaxe da string de
+>>método (conforme a lista de métodos já descrita nas primeiras linhas deste
+>>arquivo).
+>>Note que, quando rodado, este código não imprimirá nenhum gráfico, mas sal-
+>>vará as figuras requisitadas em uma pasta criada durante a execução no mesmo
+>>diretório que o arquivo .py foi salvo.
+>>
+>>COMO SEI ONDE A EXECUÇÃO DO CÓDIGO SE ENCONTRA?
+>>O código foi dotado de alguns print statements, que informam o estado da
+>>execução sempre que se inicia uma tarefa, contendo inclusive a hora em que a
+>>mesma foi iniciada.

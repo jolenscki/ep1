@@ -16,7 +16,7 @@ import time
 import datetime
 import math
 
-# Parametros estaticos do matplotlib
+# Parametros esteticos do matplotlib
 plt.rcParams['mathtext.fontset'] = 'cm'
 plt.rcParams['font.family'] = 'STIXGeneral'
 params = {'legend.fontsize': 'x-large',
